@@ -6,51 +6,43 @@
 <title>BOM Viewer (Interactive)</title>
 <style>
   :root {
-    /* ===== Palette (tweak freely) ===== */
     /* Base */
     --bg: #f7fafc;
     --ink: #1e293b;
     --muted: #64748b;
 
     /* Hierarchy */
-    --system-bg: #ffedd5;       /* light orange for systems */
-    --assembly-bg: #dbeafe;     /* light blue for assemblies */
-    --subasm-bg: #eff6ff;       /* even lighter blue for subassemblies */
-    --part-bg: #ffffff;         /* white for parts */
+    --car-bg: #fef3c7;         /* light amber for car root */
+    --system-bg: #ffedd5;      /* light orange for systems */
+    --assembly-bg: #dbeafe;    /* light blue for assemblies */
+    --subasm-bg: #eff6ff;      /* even lighter blue for subassemblies */
+    --part-bg: #ffffff;        /* white for parts */
 
-    /* Accents & surfaces */
+    /* Surfaces */
     --card: #ffffff;
     --border: #e2e8f0;
     --row: #f8fafc;
     --row-alt: #f1f5f9;
 
-    /* Header / toolbar */
+    /* Table header / toolbar */
     --table-header-bg: #e2e8f0;
     --table-header-ink: #0f172a;
     --toolbar-bg: #f1f5f9;
     --toolbar-border: #e2e8f0;
 
-    /* Tags / badges / pills */
+    /* Pills / chips */
     --pill-bg: #e0f2fe;
     --pill-ink: #0c4a6e;
     --pill-border: #bae6fd;
 
-    /* Chips (exception pills) */
-    --chip-bg: #fff7ed;
-    --chip-ink: #7c2d12;
-    --chip-border: #fed7aa;
+    /* chips by level */
+    --ok-bg:#ecfdf5;   --ok-ink:#065f46;   --ok-border:#a7f3d0;
+    --info-bg:#eff6ff; --info-ink:#1e40af; --info-border:#bfdbfe;
+    --warn-bg:#fffbeb; --warn-ink:#92400e; --warn-border:#fde68a;
+    --err-bg:#fef2f2;  --err-ink:#991b1b;  --err-border:#fecaca;
 
-    /* Chips by level */
-    --ok-bg: #ecfdf5;     --ok-ink: #065f46;     --ok-border: #a7f3d0;
-    --info-bg: #eff6ff;   --info-ink: #1e40af;   --info-border: #bfdbfe;
-    --warn-bg: #fffbeb;   --warn-ink: #92400e;   --warn-border: #fde68a;
-    --err-bg: #fef2f2;    --err-ink: #991b1b;    --err-border: #fecaca;
-
-    /* Icon / link */
     --link: #2563eb;
     --link-hover: #1d4ed8;
-
-    /* Tiny separators */
     --dashed: #cbd5e1;
   }
 
@@ -75,10 +67,9 @@
   .searchbox { display:flex; gap:8px; align-items:center; background:#fff; border:1px solid var(--border);
     border-radius:10px; padding:6px 10px; }
   .searchbox input { flex:1; background:transparent; color:var(--ink); border:none; outline:none; font-size:14px; }
-  .searchbox .kbd { font-size:11px; color:var(--muted); border:1px solid var(--border); padding:1px 6px; border-radius:6px; }
+  .searchbox .kbd { font-size:11px; color: var(--muted); border:1px solid var(--border); padding:1px 6px; border-radius:6px; }
 
-  .filters { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  .sel, .btn {
+  .btn {
     padding:8px 10px; border:1px solid var(--border); background:#fff; color:var(--ink);
     border-radius:10px; cursor:pointer; font-size: 13px;
   }
@@ -86,7 +77,6 @@
   .btn.ghost { background:transparent; }
 
   .toggle-wrap { display:flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid var(--border); border-radius:10px; background:#fff; }
-  .toggle-wrap input { transform: translateY(1px); }
 
   .card { background:var(--card); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
   .top-pad { height: 4px; background: var(--card); position: sticky; top: 0; z-index:3; }
@@ -100,10 +90,12 @@
   tbody td { padding:10px 12px; font-size: 12.5px; vertical-align: top; border-bottom:1px solid var(--border); }
 
   /* Hierarchy rows */
-  .section { background: var(--system-bg); color:var(--ink); font-weight:700; }
-  .section td { padding:10px 12px; font-size:13px; }
+  .car     { background: var(--car-bg);     color:var(--ink); font-weight:700; }
+  .section { background: var(--system-bg);  color:var(--ink); font-weight:700; }
   .assembly { background: var(--assembly-bg); color:var(--ink); }
   .subasm  { background: var(--subasm-bg); color:var(--ink); }
+
+  .section td, .car td { padding:10px 12px; font-size:13px; }
 
   /* parts */
   .part-row { background: var(--part-bg); }
@@ -114,7 +106,7 @@
 
   .badge {
     display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border-radius:999px;
-    background: var(--pill-bg); font-size: 11px; border:1px solid var(--pill-border); color:var(--pill-ink);
+    background: var(--pill-bg); font-size: 11px; border:1px solid var(--pill-border); color: var(--pill-ink);
   }
   .muted { color: var(--muted); }
   .tiny { font-size: 11px; margin-top: 4px; color: var(--muted); line-height: 1.25; }
@@ -125,10 +117,15 @@
   .desc .meta { margin-top:4px; font-size:11px; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap; }
   .desc .meta .dot::before { content:"• "; margin:0 2px 0 0; color:var(--muted); }
 
+  .row-actions { display:flex; gap:6px; align-items:center; }
+  .icon-btn { background:#fff; border:1px solid var(--border); color:var(--ink); border-radius:8px; padding:4px 8px; cursor:pointer; font-size:12px; }
+  .icon-btn:hover { background:#f8fafc; }
+
   .chips { display:flex; flex-wrap: wrap; gap:4px; }
   .chip {
     display:inline-flex; align-items:center; gap:6px;
-    border:1px solid var(--chip-border); background:var(--chip-bg); color:var(--chip-ink);
+    border:1px solid var(--pill-border);
+    background:#fff; color:var(--ink);
     border-radius:999px; padding:2px 8px; font-size:11px; white-space:nowrap;
   }
   .chip[data-level="ok"]   { background:var(--ok-bg);   color:var(--ok-ink);   border-color:var(--ok-border); }
@@ -136,22 +133,7 @@
   .chip[data-level="warn"] { background:var(--warn-bg); color:var(--warn-ink); border-color:var(--warn-border); }
   .chip[data-level="err"]  { background:var(--err-bg);  color:var(--err-ink);  border-color:var(--err-border); }
 
-  /* legend drawer */
-  .legend { position: fixed; right:16px; bottom:16px; width: 380px; max-height: 70vh; overflow:auto;
-    background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow: 0 8px 30px rgba(2,8,23,.12); display:none; }
-  .legend header { padding:10px 12px; border-bottom:1px solid var(--border); }
-  .legend .body { padding:12px; font-size:12px; color:var(--ink); }
-  .legend h3 { margin:0 0 6px 0; font-size:13px; }
-  .legend .row { display:flex; gap:6px; align-items:center; margin-bottom:6px; }
-  .legend .row .key { width:110px; color:var(--muted); }
-
-  .row-actions { display:flex; gap:6px; align-items:center; }
-  .icon-btn { background:#fff; border:1px solid var(--border); color:var(--ink); border-radius:8px; padding:4px 8px; cursor:pointer; font-size:12px; }
-  .icon-btn:hover { background:#f8fafc; }
-
   .hidden { display:none !important; }
-
-  /* lock badge */
   .lock-badge {
     font-size: 11px;
     padding: 2px 8px;
@@ -171,7 +153,7 @@
         <span id="lockBadge" class="lock-badge">mode: plain</span>
       </div>
       <div class="row-actions">
-        <button id="legendBtn" class="btn ghost">Exception Legend</button>
+        <button id="legendBtn" class="btn ghost">Help</button>
       </div>
     </header>
 
@@ -179,44 +161,24 @@
       <!-- Search -->
       <div class="searchbox">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 21l-4.35-4.35M10 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" stroke="#64748b" stroke-width="1.6" stroke-linecap="round"/></svg>
-        <input id="searchInput" placeholder="Search parts, IDs, materials, comments, or exceptions…" />
+        <input id="searchInput" placeholder="Search parts, IDs, materials, comments…" />
         <span class="kbd">⌘/</span>
       </div>
 
-      <!-- Filters -->
-      <div class="filters">
-        <select id="makeBuyFilter" class="sel">
-          <option value="all">Make/Buy: All</option>
-          <option value="m">Make only</option>
-          <option value="b">Buy only</option>
-        </select>
-
-        <select id="exceptionFilter" class="sel">
-          <option value="all">Exceptions: All</option>
-          <option value="only">Only with exceptions</option>
-          <option value="none">Only without exceptions</option>
-        </select>
-
-        <select id="exceptionTagFilter" class="sel" multiple size="1" title="Filter by specific exception tags">
-          <!-- populated dynamically -->
-        </select>
-
-        <!-- NEW: show only warnings & errors -->
+      <!-- Actions -->
+      <div class="toolbar-right" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button class="btn" id="collapseProc">Collapse subparts</button>
+        <button class="btn" id="collapseAll">Collapse everything</button>
+        <button class="btn" id="expandAll">Expand all</button>
         <label class="toggle-wrap" title="Hide OK/Info chips; show only Warning/Error chips">
           <input type="checkbox" id="onlyWarnErr" />
           Show only warnings & errors
         </label>
       </div>
 
-      <!-- Actions -->
-      <div class="toolbar-right">
-        <button class="btn" id="collapseAll">Collapse All</button>
-        <button class="btn" id="expandAll">Expand All</button>
-      </div>
-
       <!-- Loader -->
       <div class="toolbar-right">
-        <input id="jsonPath" type="text" class="sel" value="DUT25_Prelim_BOM_with_subparts.json" />
+        <input id="jsonPath" type="text" class="btn" value="DUT25_Prelim_BOM_with_subparts.json" />
         <button class="btn" id="loadBtn">Load JSON</button>
         <button class="btn" id="reloadBtn">Reload</button>
       </div>
@@ -242,16 +204,21 @@
     </div>
   </div>
 
-  <!-- Legend Drawer -->
-  <div class="legend" id="legend">
+  <!-- Help Drawer -->
+  <div class="legend" id="legend" style="display:none">
     <header>
       <div style="display:flex; justify-content:space-between; align-items:center;">
-        <strong>Exception Legend</strong>
+        <strong>How collapsing works</strong>
         <button id="legendClose" class="btn ghost">Close</button>
       </div>
     </header>
     <div class="body" id="legendBody">
-      <!-- filled from JS -->
+      <ul>
+        <li>Car/System/Assembly/Sub-assembly rows have a ▾ caret that collapses their whole block.</li>
+        <li>Part rows have a ▾ caret that collapses only their subparts (process/material/fastener).</li>
+        <li>“Collapse subparts” hides all subrows under every part, without hiding headers.</li>
+        <li>Use the checkbox to show only <b>Warnings/Errors</b> exception chips.</li>
+      </ul>
     </div>
   </div>
 
@@ -291,17 +258,6 @@ const qpEmiss = (q, unitKg) => {
   const tot = (qn * en).toFixed(3);
   return `${qn} × ${en.toFixed(3)} = ${tot} kgCO2e`;
 };
-const toArrayExc = (exc) => {
-  if (!exc && exc !== "") return [];
-  if (Array.isArray(exc)) return exc;
-  const s = String(exc);
-  return s.includes('|') ? s.split('|').map(t=>t.trim()).filter(Boolean)
-       : s.split(',').map(t=>t.trim()).filter(Boolean);
-};
-const listToChips = (arr) => {
-  if (!Array.isArray(arr) || !arr.length) return '';
-  return arr.map(p => `<span class="chip">${p}</span>`).join(' ');
-};
 const firstChildField = (obj, field) => {
   for (const [k, v] of Object.entries(obj || {})) {
     if (v && typeof v === 'object' && 'type' in v) {
@@ -313,6 +269,17 @@ const firstChildField = (obj, field) => {
   }
   return '';
 };
+const materialShort = (m) => {
+  if (!m) return '';
+  const s = String(m);
+  return s.includes('|') ? s.split('|')[0].trim() : s.trim();
+};
+const isCarNode = (obj) => {
+  if (!obj || typeof obj !== 'object') return false;
+  const hasTotals = ('Total price' in obj) || ('Total emitions' in obj);
+  const hasSystems = Object.values(obj).some(v => v && typeof v === 'object' && v.type === 'system');
+  return hasTotals || hasSystems;
+};
 
 /* ===================== Exception taxonomy ===================== */
 const EXC_META = {
@@ -320,6 +287,7 @@ const EXC_META = {
   "MatchedProcess": "ok",
   "MatchedMaterial": "ok",
   "MatchedMaterialMassBased": "ok",
+
   "SingleCEEFItem": "info",
   "UsedLaborType=2": "info",
   "UsedLaborType=3": "info",
@@ -343,21 +311,117 @@ const EXC_META = {
   "BoughtPartNoCEEFMatch": "err"
 };
 const classifyExc = (tag) => EXC_META[tag] || "info";
+const toArrayExc = (exc) => {
+  if (!exc && exc !== "") return [];
+  if (Array.isArray(exc)) return exc;
+  const s = String(exc);
+  const parts = s.includes('|') ? s.split('|') : s.split(',');
+  return parts.map(t => t.trim()).filter(Boolean);
+};
+const arrToAttr = (arr) => (Array.isArray(arr) ? arr.join('|') : String(arr || ''));
 
-/* ===================== Rendering ===================== */
+/* Global toggle */
 let ONLY_WARN_ERR = false;
 
-function rowSection(cells, cls='section') {
+function renderExceptionsFromAttr(attrStr){
+  const all = toArrayExc(attrStr);
+  if (!all.length) return `<span class="muted">—</span>`;
+  const filtered = ONLY_WARN_ERR ? all.filter(t => ['warn','err'].includes(classifyExc(t))) : all;
+  if (!filtered.length) return `<span class="muted">—</span>`;
+  const chips = filtered.slice(0, 4).map(tag => {
+    const lvl = classifyExc(tag);
+    return `<span class="chip" data-level="${lvl}" title="${tag}">${tag}</span>`;
+  }).join('');
+  const more = filtered.length - 4;
+  const moreChip = more > 0 ? `<span class="chip" data-level="info" title="${filtered.join(', ')}">+${more} more</span>` : '';
+  return `<div class="chips">${chips}${moreChip}</div>`;
+}
+function refreshAllExceptionCells(){
+  const tbody = document.getElementById('tbody');
+  tbody.querySelectorAll('td[data-exc]').forEach(td => {
+    td.innerHTML = renderExceptionsFromAttr(td.dataset.exc || '');
+  });
+}
+
+/* ===================== Totals (used for headers) ===================== */
+function sumPart(node){
+  const c = parseDecimal(node.part_costs_sum) ?? 0;
+  const e = parseDecimal(node.part_emissions_sum) ?? 0;
+  return {c,e};
+}
+function sumSubAssembly(node){
+  let c = parseDecimal(node.sub_assembly_costs);
+  let e = parseDecimal(node.sub_assembly_emissions);
+  if (c == null || e == null){
+    c = 0; e = 0;
+    for (const v of Object.values(node)){
+      if (v && typeof v === 'object'){
+        if (v.type === 'part'){ const s = sumPart(v); c += s.c; e += s.e; }
+      }
+    }
+  }
+  return {c,e};
+}
+function sumAssembly(node){
+  let c = parseDecimal(node.assembly_costs);
+  let e = parseDecimal(node.assembly_emissions);
+  if (c == null || e == null){
+    c = 0; e = 0;
+    for (const v of Object.values(node)){
+      if (v && typeof v === 'object'){
+        if (v.type === 'part'){ const s = sumPart(v); c += s.c; e += s.e; }
+        else if (v.type === 'sub_assembly'){ const s = sumSubAssembly(v); c += s.c; e += s.e; }
+      }
+    }
+  }
+  return {c,e};
+}
+function sumSystem(node){
+  let c = 0, e = 0;
+  for (const v of Object.values(node)){
+    if (v && typeof v === 'object'){
+      if (v.type === 'assembly'){ const s = sumAssembly(v); c += s.c; e += s.e; }
+      else if (v.type === 'sub_assembly'){ const s = sumSubAssembly(v); c += s.c; e += s.e; }
+      else if (v.type === 'part'){ const s = sumPart(v); c += s.c; e += s.e; }
+    }
+  }
+  return {c,e};
+}
+
+/* ===================== Rendering helpers ===================== */
+function rowSectionHTML(inner, cls='section', colspan=8) {
   const tr = document.createElement('tr');
   tr.className = cls;
   const td = document.createElement('td');
-  td.colSpan = 8;
-  td.innerHTML = cells;
+  td.colSpan = colspan;
+  td.innerHTML = inner;
   tr.appendChild(td);
   return tr;
 }
+function rowHeaderWithToggle(labelHTML, rightHTML=''){
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="icon-btn hdr-toggle">▾</button>
+        ${labelHTML}
+      </div>
+      <div class="muted">${rightHTML}</div>
+    </div>`;
+}
+function collectChildExceptions(partObj){
+  const ex = [];
+  for (const [k, v] of Object.entries(partObj || {})) {
+    if (v && typeof v === 'object' && 'type' in v) {
+      const childExc = toArrayExc(v.exception);
+      if (childExc.length) ex.push(...childExc);
+    }
+  }
+  // unique
+  const seen = new Set();
+  return ex.filter(t => (seen.has(t) ? false : (seen.add(t), true)));
+}
 
-function rowPart({name, descHtml, mb, mass_g, emissionsHtml, emissionsNote, quant, price, costNote, id, exceptions, partKey}) {
+function rowPart({name, descHtml, mb, mass_g, emissionsHtml, emissionsNote, quant, price, costNote, id, exceptionsAttr, partKey}) {
   const tr = document.createElement('tr');
   tr.className = 'part-row';
   tr.dataset.partKey = partKey || '';
@@ -380,36 +444,19 @@ function rowPart({name, descHtml, mb, mass_g, emissionsHtml, emissionsNote, quan
       ${costNote ? `<div class="tiny">${costNote}</div>` : ''}
     </td>
     <td class="mono">${id ?? ''}</td>
-    <td>${renderExceptions(exceptions)}</td>
+    <td class="exc-cell" data-exc=""></td>
   `;
+  // fill exceptions cell
+  const excTd = tr.querySelector('.exc-cell');
+  excTd.dataset.exc = exceptionsAttr || '';
+  excTd.innerHTML = renderExceptionsFromAttr(exceptionsAttr || '');
   return tr;
 }
 
-function renderExceptions(exceptions) {
-  const ex = toArrayExc(exceptions);
-  if (!ex.length) return `<span class="muted">—</span>`;
-
-  const filtered = ONLY_WARN_ERR
-    ? ex.filter(tag => {
-        const lvl = classifyExc(tag);
-        return lvl === 'warn' || lvl === 'err';
-      })
-    : ex;
-
-  if (!filtered.length) return `<span class="muted">—</span>`;
-
-  const chips = filtered.slice(0, 4).map(tag => {
-    const level = classifyExc(tag);
-    return `<span class="chip" data-level="${level}" title="${tag}">${tag}</span>`;
-  }).join('');
-  const more = filtered.length - 4;
-  const moreChip = more > 0 ? `<span class="chip" data-level="info" title="${filtered.join(', ')}">+${more} more</span>` : '';
-  return `<div class="chips">${chips}${moreChip}</div>`;
-}
-
-function rowSub(type, name, desc, qty, unit, emissions, exceptions, costNote='', emissNote='', materialNote='') {
+function rowSub(type, name, desc, qty, unit, emissions, costNote='', emissNote='', materialNote='', kind='other', exceptionsAttr='') {
   const tr = document.createElement('tr');
   tr.className = 'subrow';
+  tr.dataset.subrowKind = kind; // "process" | "material" | "fastener" | "other"
   const badge = `<span class="badge">${type}</span>`;
   const meta = materialNote ? `<div class="muted">${materialNote}</div>` : '';
   tr.innerHTML = `
@@ -417,53 +464,93 @@ function rowSub(type, name, desc, qty, unit, emissions, exceptions, costNote='',
     <td>${desc ?? ''} ${meta}</td>
     <td></td>
     <td></td>
-    <td>
-      ${fmtE(emissions)}
-      ${emissNote ? `<div class="tiny">${emissNote}</div>` : ''}
-    </td>
-    <td>
-      ${qpStr(qty, unit)}
-      ${costNote ? `<div class="tiny">${costNote}</div>` : ''}
-    </td>
+    <td>${fmtE(emissions)}${emissNote ? `<div class="tiny">${emissNote}</div>` : ''}</td>
+    <td>${qpStr(qty, unit)}${costNote ? `<div class="tiny">${costNote}</div>` : ''}</td>
     <td></td>
-    <td>${renderExceptions(exceptions)}</td>
+    <td class="exc-cell" data-exc=""></td>
   `;
+  const excTd = tr.querySelector('.exc-cell');
+  excTd.dataset.exc = exceptionsAttr || '';
+  excTd.innerHTML = renderExceptionsFromAttr(exceptionsAttr || '');
   return tr;
-}
-
-function materialShort(m) {
-  if (!m) return '';
-  const s = String(m);
-  return s.includes('|') ? s.split('|')[0].trim() : s.trim();
 }
 
 /* ===================== Data → table ===================== */
 let GLOBAL_BOM = {};
-let FLAT_PART_ROWS = [];
+let PART_BLOCKS = [];       // [{startIndex, endIndex}]
+let SUBASM_BLOCKS = [];     // "
+let ASSEMBLY_BLOCKS = [];   // "
+let SYSTEM_BLOCKS = [];     // "
+let CAR_BLOCK = null;       // {startIndex, endIndex}
 
 function renderBOM(bom) {
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
-  FLAT_PART_ROWS = [];
+  PART_BLOCKS = [];
+  SUBASM_BLOCKS = [];
+  ASSEMBLY_BLOCKS = [];
+  SYSTEM_BLOCKS = [];
+  CAR_BLOCK = null;
 
-  for (const [sysCode, sysObj] of Object.entries(bom)) {
+  for (const [carName, carObj] of Object.entries(bom)) {
+    if (!(carObj && typeof carObj === 'object' && isCarNode(carObj))) continue;
+
+    const price = carObj['Total price'];
+    const emis  = carObj['Total emitions'];
+    const priceTxt = (price != null && String(price).trim() !== '') ? `${price}€` : 'Value Not Calculated or Null';
+    const emisTxt  = (emis  != null && String(emis).trim()  !== '') ? `${parseDecimal(emis).toFixed(8)} kgCO2e` : 'Value Not Calculated or Null';
+
+    const carStart = tbody.children.length;
+    tbody.appendChild(
+      rowSectionHTML(
+        rowHeaderWithToggle(`<b>Car:</b> ${carName}`, `Total: ${priceTxt} | Emissions: ${emisTxt}`),
+        'car'
+      )
+    );
+
+    renderSystemsBlock(tbody, carObj);
+
+    const carEnd = tbody.children.length - 1;
+    CAR_BLOCK = { startIndex: carStart, endIndex: carEnd };
+  }
+
+  wireToggles();
+
+  // initialize expanded state
+  if (CAR_BLOCK) setHeaderCollapsed(CAR_BLOCK, false);
+  SYSTEM_BLOCKS.forEach(b => setHeaderCollapsed(b, false));
+  ASSEMBLY_BLOCKS.forEach(b => setHeaderCollapsed(b, false));
+  SUBASM_BLOCKS.forEach(b => setHeaderCollapsed(b, false));
+  PART_BLOCKS.forEach(b => setPartCollapsed(b, false));
+}
+
+function renderSystemsBlock(tbody, carObj) {
+  for (const [sysCode, sysObj] of Object.entries(carObj)) {
     if (!(sysObj && typeof sysObj === 'object' && sysObj.type === 'system')) continue;
 
-    tbody.appendChild(rowSection(`<span class="mono">${sysCode}</span>`, 'section'));
+    const s = sumSystem(sysObj);
+    const sysStart = tbody.children.length;
+    tbody.appendChild(
+      rowSectionHTML(
+        rowHeaderWithToggle(`<span class="mono">${sysCode}</span>`,
+                            `Cost: ${ s.c.toFixed(2) } | Emiss: ${ fmtE(s.e) }`),
+        'section'
+      )
+    );
 
+    // Assemblies in system
     for (const [asmName, asmObj] of Object.entries(sysObj)) {
       if (asmName === 'type' || typeof asmObj !== 'object') continue;
       if (asmObj.type !== 'assembly') continue;
 
-      const asmCost = asmObj.assembly_costs ?? '';
-      const asmEmiss = fmtE(asmObj.assembly_emissions);
-      const asmNo = asmObj.assembly_no ? `<span class="mono">#${asmObj.assembly_no}</span>` : '';
+      const at = sumAssembly(asmObj);
+      const asmStart = tbody.children.length;
       tbody.appendChild(
-        rowSection(
-          `<div style="display:flex;justify-content:space-between;align-items:center;">
-             <div><b>${asmName}</b> ${asmNo}</div>
-             <div class="muted">Cost: ${asmCost || 'Value Not Calculated or Null'} | Emiss: ${asmEmiss}</div>
-           </div>`,
+        rowSectionHTML(
+          rowHeaderWithToggle(
+            `<b>${asmName}</b> ${asmObj.assembly_no ? `<span class="mono">#${asmObj.assembly_no}</span>` : ''}`,
+            `Cost: ${ (parseDecimal(asmObj.assembly_costs) ?? at.c).toFixed(2) } | Emiss: ${ fmtE(parseDecimal(asmObj.assembly_emissions) ?? at.e) }`
+          ),
           'assembly'
         )
       );
@@ -479,19 +566,35 @@ function renderBOM(bom) {
       for (const [subName, subObj] of Object.entries(asmObj)) {
         if (!(subObj && typeof subObj === 'object' && subObj.type === 'sub_assembly')) continue;
 
-        tbody.appendChild(rowSection(`<b>${asmName}</b> ⇒ ${subName}`, 'subasm'));
+        const st = sumSubAssembly(subObj);
+        const subStart = tbody.children.length;
+        tbody.appendChild(
+          rowSectionHTML(
+            rowHeaderWithToggle(
+              `<b>${asmName}</b> ⇒ ${subName}`,
+              `Cost: ${ (parseDecimal(subObj.sub_assembly_costs) ?? st.c).toFixed(2) } | Emiss: ${ fmtE(parseDecimal(subObj.sub_assembly_emissions) ?? st.e) }`
+            ),
+            'subasm'
+          )
+        );
 
         for (const [pname, pobj] of Object.entries(subObj)) {
           if (pobj && typeof pobj === 'object' && pobj.type === 'part') {
             pushPartBlock(tbody, pname, pobj);
           }
         }
-      }
-    }
-  }
 
-  wireRowToggles();
-  populateExceptionTagFilter();
+        const subEnd = tbody.children.length - 1;
+        SUBASM_BLOCKS.push({ startIndex: subStart, endIndex: subEnd });
+      }
+
+      const asmEnd = tbody.children.length - 1;
+      ASSEMBLY_BLOCKS.push({ startIndex: asmStart, endIndex: asmEnd });
+    }
+
+    const sysEnd = tbody.children.length - 1;
+    SYSTEM_BLOCKS.push({ startIndex: sysStart, endIndex: sysEnd });
+  }
 }
 
 function pushPartBlock(tbody, partName, partObj) {
@@ -517,11 +620,13 @@ function pushPartBlock(tbody, partName, partObj) {
   const metaBits = [];
   if (mat) metaBits.push(`<span class="dot">Material: ${mat}</span>`);
   if (complexity !== null) metaBits.push(`<span class="dot">Complexity: ${complexity}</span>`);
-  if (procList.length) metaBits.push(`<span class="dot">Process: ${listToChips(procList)}</span>`);
+  if (procList.length) metaBits.push(`<span class="dot">Process: ${procList.map(p=>`<span class="badge">${p}</span>`).join(' ')}</span>`);
   const descHtml = `${descTop}${metaBits.length ? `<div class="meta">${metaBits.join('')}</div>` : ''}`;
 
-  const partExceptions = toArrayExc(partObj.exception);
-  const aggregated = partExceptions.length ? partExceptions : collectChildExceptions(partObj);
+  // exceptions for part (own or aggregated from children)
+  const partOwn = toArrayExc(partObj.exception);
+  const partAgg = partOwn.length ? partOwn : collectChildExceptions(partObj);
+  const partExcAttr = arrToAttr(partAgg);
 
   const partRow = rowPart({
     name: partName,
@@ -534,7 +639,7 @@ function pushPartBlock(tbody, partName, partObj) {
     price: unitPrice,
     costNote,
     id: partObj.part_no || '',
-    exceptions: aggregated,
+    exceptionsAttr: partExcAttr,
     partKey: partName
   });
   tbody.appendChild(partRow);
@@ -543,19 +648,17 @@ function pushPartBlock(tbody, partName, partObj) {
   for (const [key, val] of Object.entries(partObj)) {
     if (!(val && typeof val === 'object' && 'type' in val)) continue;
     const t = val.type;
-    const exc = val.exception || [];
 
     const costNote = val.comments_costs ? `Cost comment: ${val.comments_costs}` : '';
     const emissNote = val.comments_emissions ? `Carbon comment: ${val.comments_emissions}` : '';
+    const excAttr = arrToAttr(val.exception || '');
 
     if (t === 'm') {
       tbody.appendChild(
         rowSub('Bought/Material', key,
           val.comments_costs || val.subpart_comments || '',
           val.subpart_quantity, val.subpart_costs, val.subpart_emissions,
-          exc,
-          costNote, emissNote,
-          val.comments_emissions || ''
+          costNote, emissNote, val.comments_emissions || '', 'material', excAttr
         )
       );
     } else if (t === 'p') {
@@ -566,8 +669,15 @@ function pushPartBlock(tbody, partName, partObj) {
         rowSub('Manufact. Process', key,
           `${d}${meta}`,
           val.subpart_quantity, val.subpart_costs, val.subpart_emissions,
-          exc,
-          costNote, emissNote
+          costNote, emissNote, '', 'process', excAttr
+        )
+      );
+    } else if (t === 'f') {
+      tbody.appendChild(
+        rowSub('Fastener', key,
+          val.subpart_comments || '',
+          val.subpart_quantity, val.subpart_costs, val.subpart_emissions,
+          costNote, emissNote, '', 'fastener', excAttr
         )
       );
     } else {
@@ -575,204 +685,157 @@ function pushPartBlock(tbody, partName, partObj) {
         rowSub('Subpart', key,
           val.subpart_comments || '',
           val.subpart_quantity, val.subpart_costs, val.subpart_emissions,
-          exc,
-          costNote, emissNote
+          costNote, emissNote, '', 'other', excAttr
         )
       );
     }
   }
 
   const endIndex = tbody.children.length - 1;
-  FLAT_PART_ROWS.push({ startIndex, endIndex, node: partObj, name: partName });
+  PART_BLOCKS.push({ startIndex, endIndex });
 }
 
-function collectChildExceptions(partObj) {
-  const ex = [];
-  for (const [key, val] of Object.entries(partObj)) {
-    if (val && typeof val === 'object' && 'type' in val) {
-      const childExc = toArrayExc(val.exception);
-      if (childExc.length) ex.push(...childExc);
+/* ===================== Visibility state (no toggling conflicts) ===================== */
+function setRowsVisibility(tbody, startIndex, endIndex, visible) {
+  for (let j = startIndex + 1; j <= endIndex; j++) {
+    tbody.children[j].classList.toggle('hidden', !visible);
+  }
+}
+function setCaret(btn, collapsed) { if (btn) btn.textContent = collapsed ? '▸' : '▾'; }
+
+function setHeaderCollapsed(block, collapsed) {
+  const tbody = document.getElementById('tbody');
+  const hdr = tbody.children[block.startIndex];
+  hdr.dataset.collapsed = collapsed ? '1' : '0';
+  setCaret(hdr.querySelector('.hdr-toggle'), collapsed);
+  setRowsVisibility(tbody, block.startIndex, block.endIndex, !collapsed);
+}
+function getHeaderCollapsed(block) {
+  const tbody = document.getElementById('tbody');
+  const hdr = tbody.children[block.startIndex];
+  return (hdr?.dataset.collapsed === '1');
+}
+
+function setPartCollapsed(block, collapsed) {
+  const tbody = document.getElementById('tbody');
+  const prow = tbody.children[block.startIndex];
+  prow.dataset.collapsed = collapsed ? '1' : '0';
+  setCaret(prow.querySelector('.toggle-part'), collapsed);
+  for (let j = block.startIndex + 1; j <= block.endIndex; j++) {
+    tbody.children[j].classList.toggle('hidden', collapsed);
+  }
+}
+function getPartCollapsed(block) {
+  const tbody = document.getElementById('tbody');
+  const prow = tbody.children[block.startIndex];
+  return (prow?.dataset.collapsed === '1');
+}
+function reapplyPartStatesWithin(range) {
+  const tbody = document.getElementById('tbody');
+  for (const b of PART_BLOCKS) {
+    if (b.startIndex > range.startIndex && b.endIndex <= range.endIndex) {
+      const collapsed = getPartCollapsed(b);
+      tbody.children[b.startIndex].classList.remove('hidden'); // ensure header visible
+      for (let j = b.startIndex + 1; j <= b.endIndex; j++) {
+        tbody.children[j].classList.toggle('hidden', collapsed);
+      }
+      setCaret(tbody.children[b.startIndex].querySelector('.toggle-part'), collapsed);
     }
   }
-  const seen = new Set();
-  return ex.filter(tag => (seen.has(tag) ? false : (seen.add(tag), true)));
 }
 
-/* ===================== Interactions ===================== */
-function wireRowToggles() {
+/* ===================== Interactions & Collapsing ===================== */
+function wireToggles() {
   const tbody = document.getElementById('tbody');
-  tbody.querySelectorAll('.toggle-part').forEach((btn, i) => {
+
+  // Header toggles (Car/System/Assembly/Sub-assembly)
+  tbody.querySelectorAll('.car .hdr-toggle, .section .hdr-toggle, .assembly .hdr-toggle, .subasm .hdr-toggle')
+    .forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const row = btn.closest('tr');
+        const i = Array.from(tbody.children).indexOf(row);
+
+        const block =
+          (CAR_BLOCK && CAR_BLOCK.startIndex === i ? CAR_BLOCK : null) ||
+          SYSTEM_BLOCKS.find(b => b.startIndex === i) ||
+          ASSEMBLY_BLOCKS.find(b => b.startIndex === i) ||
+          SUBASM_BLOCKS.find(b => b.startIndex === i);
+        if (!block) return;
+
+        const collapsed = !getHeaderCollapsed(block);      // desired new state
+        setHeaderCollapsed(block, collapsed);
+        if (!collapsed) reapplyPartStatesWithin(block);     // restore part subpart states on expand
+      });
+    });
+
+  // Part toggles (show/hide subparts only)
+  tbody.querySelectorAll('.toggle-part').forEach((btn) => {
     btn.addEventListener('click', () => {
       const row = btn.closest('tr');
       const idx = Array.from(tbody.children).indexOf(row);
-      const block = FLAT_PART_ROWS.find(b => b.startIndex === idx);
+      const block = PART_BLOCKS.find(b => b.startIndex === idx);
       if (!block) return;
-      const { startIndex, endIndex } = block;
-      const collapsed = btn.textContent.trim() === '▸';
-      btn.textContent = collapsed ? '▾' : '▸';
-      for (let j = startIndex + 1; j <= endIndex; j++) {
-        tbody.children[j].classList.toggle('hidden');
-      }
+      const collapsed = !getPartCollapsed(block);          // desired new state
+      setPartCollapsed(block, collapsed);
     });
   });
 }
+
+/* Top bar buttons */
+document.getElementById('collapseProc').addEventListener('click', () => {
+  PART_BLOCKS.forEach(b => setPartCollapsed(b, true));   // collapse all subparts
+});
 document.getElementById('collapseAll').addEventListener('click', () => {
-  const tbody = document.getElementById('tbody');
-  tbody.querySelectorAll('.toggle-part').forEach(btn => btn.textContent = '▸');
-  FLAT_PART_ROWS.forEach(({startIndex, endIndex}) => {
-    for (let j = startIndex + 1; j <= endIndex; j++) tbody.children[j].classList.add('hidden');
-  });
+  if (CAR_BLOCK) setHeaderCollapsed(CAR_BLOCK, true);
+  SYSTEM_BLOCKS.forEach(b => setHeaderCollapsed(b, true));
+  ASSEMBLY_BLOCKS.forEach(b => setHeaderCollapsed(b, true));
+  SUBASM_BLOCKS.forEach(b => setHeaderCollapsed(b, true));
+  PART_BLOCKS.forEach(b => setPartCollapsed(b, true));
 });
 document.getElementById('expandAll').addEventListener('click', () => {
-  const tbody = document.getElementById('tbody');
-  tbody.querySelectorAll('.toggle-part').forEach(btn => btn.textContent = '▾');
-  FLAT_PART_ROWS.forEach(({startIndex, endIndex}) => {
-    for (let j = startIndex + 1; j <= endIndex; j++) tbody.children[j].classList.remove('hidden');
-  });
+  if (CAR_BLOCK) setHeaderCollapsed(CAR_BLOCK, false);
+  SYSTEM_BLOCKS.forEach(b => setHeaderCollapsed(b, false));
+  ASSEMBLY_BLOCKS.forEach(b => setHeaderCollapsed(b, false));
+  SUBASM_BLOCKS.forEach(b => setHeaderCollapsed(b, false));
+  PART_BLOCKS.forEach(b => setPartCollapsed(b, false));
 });
 
-/* Legend drawer */
-const legendBtn = document.getElementById('legendBtn');
-const legend = document.getElementById('legend');
-const legendClose = document.getElementById('legendClose');
-legendBtn.addEventListener('click', () => { legend.style.display = 'block'; });
-legendClose.addEventListener('click', () => { legend.style.display = 'none'; });
-
-function renderLegend() {
-  const el = document.getElementById('legendBody');
-  const groups = { ok:[], info:[], warn:[], err:[] };
-  Object.keys(EXC_META).forEach(tag => {
-    groups[EXC_META[tag]].push(tag);
-  });
-  const block = (title, level) => `
-    <h3>${title}</h3>
-    <div class="chips" style="margin-bottom:8px;">
-      ${groups[level].map(t => `<span class="chip" data-level="${level}">${t}</span>`).join('')}
-    </div>
-  `;
-  el.innerHTML = block('Matches / Success', 'ok') +
-                 block('Informational', 'info') +
-                 block('Warnings', 'warn') +
-                 block('Errors', 'err');
-}
-
-/* Search + Filters */
-const searchInput = document.getElementById('searchInput');
-const makeBuyFilter = document.getElementById('makeBuyFilter');
-const exceptionFilter = document.getElementById('exceptionFilter');
-const exceptionTagFilter = document.getElementById('exceptionTagFilter');
+/* Exceptions filter checkbox */
 const onlyWarnErr = document.getElementById('onlyWarnErr');
-
-function populateExceptionTagFilter() {
-  const tags = new Set();
-  FLAT_PART_ROWS.forEach(({node}) => {
-    toArrayExc(node.exception).forEach(t => tags.add(t));
-    for (const [k,v] of Object.entries(node)) {
-      if (v && typeof v === 'object' && 'type' in v) {
-        toArrayExc(v.exception).forEach(t => tags.add(t));
-      }
-    }
-  });
-  exceptionTagFilter.innerHTML = '';
-  Array.from(tags).sort().forEach(tag => {
-    const opt = document.createElement('option');
-    opt.value = tag; opt.textContent = tag;
-    exceptionTagFilter.appendChild(opt);
-  });
-}
-
-function selectedExceptionTags() {
-  return Array.from(exceptionTagFilter.selectedOptions).map(o => o.value);
-}
-
-function applyFilters() {
-  const q = (searchInput.value || '').toLowerCase().trim();
-  const mb = makeBuyFilter.value;
-  const excMode = exceptionFilter.value;
-  const excTags = selectedExceptionTags();
-
-  const tbody = document.getElementById('tbody');
-  Array.from(tbody.children).forEach(tr => tr.classList.remove('hidden'));
-
-  FLAT_PART_ROWS.forEach(({startIndex, endIndex, node, name}) => {
-    let show = true;
-
-    const mbVal = String(node.makebuy || '').toLowerCase();
-    if (mb !== 'all' && mbVal !== mb) show = false;
-
-    const hasExc = !!(toArrayExc(node.exception).length || collectChildExceptions(node).length);
-    if (excMode === 'only' && !hasExc) show = false;
-    if (excMode === 'none' && hasExc) show = false;
-
-    if (show && excTags.length) {
-      const nodeTags = new Set([
-        ...toArrayExc(node.exception),
-        ...collectChildExceptions(node)
-      ]);
-      const ok = excTags.every(t => nodeTags.has(t));
-      if (!ok) show = false;
-    }
-
-    if (show && q) {
-      const hay = [
-        name,
-        node.part_no,
-        node.part_comments,
-        node.Subpart_process_overview?.material,
-        ...toArrayExc(node.exception),
-        ...collectChildExceptions(node)
-      ].filter(Boolean).join(' | ').toLowerCase();
-      if (!hay.includes(q)) show = false;
-    }
-
-    if (!show) {
-      for (let j = startIndex; j <= endIndex; j++) tbody.children[j].classList.add('hidden');
-    }
-  });
-
-  refreshChips();
-}
-function refreshChips() {
-  const tbody = document.getElementById('tbody');
-  FLAT_PART_ROWS.forEach(({startIndex, endIndex, node}) => {
-    const partRow = tbody.children[startIndex];
-    const partCell = partRow.children[7];
-    const partEx = toArrayExc(node.exception).length ? node.exception : collectChildExceptions(node);
-    partCell.innerHTML = renderExceptions(partEx);
-
-    for (let j = startIndex + 1; j <= endIndex; j++) {
-      const tr = tbody.children[j];
-      const lastCell = tr.children[7];
-      const titleList = [];
-      lastCell.querySelectorAll('.chip').forEach(ch => titleList.push(ch.getAttribute('title') || ch.textContent.trim()));
-      const raw = titleList.join(', ');
-      lastCell.innerHTML = renderExceptions(raw);
-    }
-  });
-}
-
-/* events */
-searchInput.addEventListener('input', debounce(applyFilters, 120));
-makeBuyFilter.addEventListener('change', applyFilters);
-exceptionFilter.addEventListener('change', applyFilters);
-exceptionTagFilter.addEventListener('change', applyFilters);
 onlyWarnErr.addEventListener('change', () => {
   ONLY_WARN_ERR = onlyWarnErr.checked;
-  refreshChips();
+  refreshAllExceptionCells();
 });
 
-/* shortcut to focus search */
-window.addEventListener('keydown', (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key === '/') {
-    e.preventDefault();
-    searchInput.focus();
-  }
-});
-
-/* debounce */
-function debounce(fn, ms) {
-  let t; return (...args) => { clearTimeout(t); t = setTimeout(()=>fn(...args), ms); };
+/* Search */
+const searchInput = document.getElementById('searchInput');
+function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms);} }
+function applySearch(){
+  const q = (searchInput.value || '').toLowerCase().trim();
+  const tbody = document.getElementById('tbody');
+  PART_BLOCKS.forEach(({startIndex, endIndex}) => {
+    let hay = '';
+    const prow = tbody.children[startIndex];
+    const name = prow?.querySelector('.name span')?.textContent || '';
+    for (let c = 0; c < prow.children.length; c++){
+      hay += ' ' + (prow.children[c].innerText || '');
+    }
+    const match = !q || hay.toLowerCase().includes(q) || name.toLowerCase().includes(q);
+    for (let j = startIndex; j <= endIndex; j++){
+      tbody.children[j].classList.toggle('hidden', !match);
+    }
+    // keep caret consistent with state if we re-show a matched block
+    if (match) {
+      const collapsed = getPartCollapsed({startIndex});
+      const caret = prow.querySelector('.toggle-part');
+      if (caret) caret.textContent = collapsed ? '▸' : '▾';
+    }
+  });
 }
+searchInput.addEventListener('input', debounce(applySearch, 120));
+window.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === '/') { e.preventDefault(); searchInput.focus(); }
+});
 
 /* ===================== Load + Init with plain→encrypted fallback ===================== */
 const PLAIN_JSON = "DUT25_Prelim_BOM_with_subparts.json";
@@ -787,27 +850,20 @@ async function tryLoadPlain(path) {
     const res = await fetch(path, { cache: 'no-store' });
     if (!res.ok) return null;
     return await res.json();
-  } catch (e) {
-    return null;
-  }
+  } catch { return null; }
 }
-
 async function loadEncrypted(path) {
   const res = await fetch(path, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Encrypted JSON not found (${res.status})`);
   const buf = await res.arrayBuffer();
-  if (buf.byteLength < SALT_LEN + IV_LEN + TAG_LEN + 1) {
-    throw new Error("Encrypted blob too small");
-  }
+  if (buf.byteLength < SALT_LEN + IV_LEN + TAG_LEN + 1) throw new Error("Encrypted blob too small");
 
   const salt = buf.slice(0, SALT_LEN);
   const iv   = buf.slice(SALT_LEN, SALT_LEN + IV_LEN);
   const tag  = buf.slice(buf.byteLength - TAG_LEN);
   const ct   = buf.slice(SALT_LEN + IV_LEN, buf.byteLength - TAG_LEN);
 
-  const pwd = prompt("🔒 Enter password to unlock BOM:");
-  if (!pwd) throw new Error("No password entered");
-
+  const pwd = prompt("🔒 Enter password to unlock BOM:"); if (!pwd) throw new Error("No password entered");
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(pwd), { name: "PBKDF2" }, false, ["deriveKey"]);
   const key = await crypto.subtle.deriveKey(
@@ -818,7 +874,6 @@ async function loadEncrypted(path) {
     ["decrypt"]
   );
 
-  // browser decrypt expects ciphertext||tag as a single buffer
   const full = new Uint8Array(ct.byteLength + tag.byteLength);
   full.set(new Uint8Array(ct), 0);
   full.set(new Uint8Array(tag), new Uint8Array(ct).length);
@@ -826,35 +881,30 @@ async function loadEncrypted(path) {
   try {
     const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, full);
     return JSON.parse(new TextDecoder().decode(plain));
-  } catch (e) {
-    throw new Error("Decryption failed (wrong password or corrupted file).");
-  }
+  } catch { throw new Error("Decryption failed (wrong password or corrupted file)."); }
 }
 
 async function loadAndRender(path) {
   const fileLabel = document.getElementById('fileLabel');
   const lockBadge = document.getElementById('lockBadge');
-
   fileLabel.textContent = path;
 
-  // 1) Try plain first (dev/local use)
   let bom = await tryLoadPlain(path);
   if (bom) {
     lockBadge.textContent = "mode: plain";
-    renderBOM(bom);
-    renderLegend();
-    applyFilters();
+    GLOBAL_BOM = bom;
+    renderBOM(GLOBAL_BOM);
+    refreshAllExceptionCells();
     return;
   }
 
-  // 2) Fall back to encrypted (public / GitHub Pages)
   try {
     bom = await loadEncrypted(ENCRYPTED_JSON);
     lockBadge.textContent = "mode: encrypted";
     fileLabel.textContent = ENCRYPTED_JSON;
-    renderBOM(bom);
-    renderLegend();
-    applyFilters();
+    GLOBAL_BOM = bom;
+    renderBOM(GLOBAL_BOM);
+    refreshAllExceptionCells();
   } catch (err) {
     console.warn(err);
     const tbody = document.getElementById('tbody');
@@ -871,7 +921,12 @@ document.getElementById('reloadBtn').addEventListener('click', () => {
   loadAndRender(p).catch(err => alert(err.message));
 });
 
-// Auto-load default on open
+/* Help */
+const legend = document.getElementById('legend');
+document.getElementById('legendBtn').addEventListener('click', () => { legend.style.display = 'block'; });
+document.getElementById('legendClose').addEventListener('click', () => { legend.style.display = 'none'; });
+
+/* Initial load */
 loadAndRender(document.getElementById('jsonPath').value).catch(err => {
   console.warn(err);
   const tbody = document.getElementById('tbody');
