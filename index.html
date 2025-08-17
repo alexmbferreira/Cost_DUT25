@@ -97,9 +97,9 @@
 
   .section td, .car td { padding:10px 12px; font-size:13px; }
 
-  /* parts */
-  .part-row { background: var(--part-bg); }
-  .part-row:nth-child(odd) { background: var(--row-alt); }
+/* keep every part row white, no zebra */
+.part-row { background: var(--part-bg) !important; }
+.part-row:nth-child(odd) { background: var(--part-bg) !important; }
 
   .subrow { background: var(--row); }
   .subrow td { border-bottom:1px dashed var(--dashed); }
