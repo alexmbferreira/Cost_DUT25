@@ -67,7 +67,7 @@
   .searchbox { display:flex; gap:8px; align-items:center; background:#fff; border:1px solid var(--border);
     border-radius:10px; padding:6px 10px; }
   .searchbox input { flex:1; background:transparent; color:var(--ink); border:none; outline:none; font-size:14px; }
-  .searchbox .kbd { font-size:11px; color: var(--muted); border:1px solid var(--border); padding:1px 6px; border-radius:6px; }
+  .searchbox .kbd { font-size:11px; color:var(--muted); border:1px solid var(--border); padding:1px 6px; border-radius:6px; }
 
   .btn {
     padding:8px 10px; border:1px solid var(--border); background:#fff; color:var(--ink);
@@ -240,6 +240,10 @@ const fmtE = (kg, nd=3) => {
   const v = parseDecimal(kg);
   return v === null || allZero(v) ? "Value Not Calculated or Null" : `${v.toFixed(nd)} kgCO2e`;
 };
+const fmtMass = (kg, nd=3) => {
+  const v = parseDecimal(kg);
+  return v === null ? "Value Not Calculated or Null" : `${v.toFixed(nd)} kg`;
+};
 const kgToGrams = (kgVal) => {
   const v = parseDecimal(kgVal);
   return v === null || allZero(v) ? "Value Not Calculated or Null" : (v * 1000).toFixed(3) + " g";
@@ -347,45 +351,56 @@ function refreshAllExceptionCells(){
 function sumPart(node){
   const c = parseDecimal(node.part_costs_sum) ?? 0;
   const e = parseDecimal(node.part_emissions_sum) ?? 0;
-  return {c,e};
+  const m = parseDecimal(node.part_mass_kg_sum) ?? 0;         // mass
+  return {c,e,m};
 }
 function sumSubAssembly(node){
   let c = parseDecimal(node.sub_assembly_costs);
   let e = parseDecimal(node.sub_assembly_emissions);
-  if (c == null || e == null){
-    c = 0; e = 0;
+  let m = parseDecimal(node.sub_assembly_mass_kg);
+  if (c == null || e == null || m == null){
+    c = 0; e = 0; m = 0;
     for (const v of Object.values(node)){
       if (v && typeof v === 'object'){
-        if (v.type === 'part'){ const s = sumPart(v); c += s.c; e += s.e; }
+        if (v.type === 'part'){ const s = sumPart(v); c += s.c; e += s.e; m += s.m; }
+        else if (v.type === 'sub_assembly'){ const s = sumSubAssembly(v); c += s.c; e += s.e; m += s.m; }
+        else if (v.type === 'assembly'){ const s = sumAssembly(v); c += s.c; e += s.e; m += s.m; }
       }
     }
   }
-  return {c,e};
+  return {c,e,m};
 }
 function sumAssembly(node){
   let c = parseDecimal(node.assembly_costs);
   let e = parseDecimal(node.assembly_emissions);
-  if (c == null || e == null){
-    c = 0; e = 0;
+  let m = parseDecimal(node.assembly_mass_kg);
+  if (c == null || e == null || m == null){
+    c = 0; e = 0; m = 0;
     for (const v of Object.values(node)){
       if (v && typeof v === 'object'){
-        if (v.type === 'part'){ const s = sumPart(v); c += s.c; e += s.e; }
-        else if (v.type === 'sub_assembly'){ const s = sumSubAssembly(v); c += s.c; e += s.e; }
+        if (v.type === 'part'){ const s = sumPart(v); c += s.c; e += s.e; m += s.m; }
+        else if (v.type === 'sub_assembly'){ const s = sumSubAssembly(v); c += s.c; e += s.e; m += s.m; }
       }
     }
   }
-  return {c,e};
+  return {c,e,m};
 }
 function sumSystem(node){
-  let c = 0, e = 0;
-  for (const v of Object.values(node)){
-    if (v && typeof v === 'object'){
-      if (v.type === 'assembly'){ const s = sumAssembly(v); c += s.c; e += s.e; }
-      else if (v.type === 'sub_assembly'){ const s = sumSubAssembly(v); c += s.c; e += s.e; }
-      else if (v.type === 'part'){ const s = sumPart(v); c += s.c; e += s.e; }
+  // Prefer precomputed system_* from Python if present
+  let c = parseDecimal(node.system_costs);
+  let e = parseDecimal(node.system_emissions);
+  let m = parseDecimal(node.system_mass_kg);
+  if (c == null || e == null || m == null){
+    c = 0; e = 0; m = 0;
+    for (const v of Object.values(node)){
+      if (v && typeof v === 'object'){
+        if (v.type === 'assembly'){ const s = sumAssembly(v); c += s.c; e += s.e; m += s.m; }
+        else if (v.type === 'sub_assembly'){ const s = sumSubAssembly(v); c += s.c; e += s.e; m += s.m; }
+        else if (v.type === 'part'){ const s = sumPart(v); c += s.c; e += s.e; m += s.m; }
+      }
     }
   }
-  return {c,e};
+  return {c,e,m};
 }
 
 /* ===================== Rendering helpers ===================== */
@@ -416,7 +431,6 @@ function collectChildExceptions(partObj){
       if (childExc.length) ex.push(...childExc);
     }
   }
-  // unique
   const seen = new Set();
   return ex.filter(t => (seen.has(t) ? false : (seen.add(t), true)));
 }
@@ -446,7 +460,6 @@ function rowPart({name, descHtml, mb, mass_g, emissionsHtml, emissionsNote, quan
     <td class="mono">${id ?? ''}</td>
     <td class="exc-cell" data-exc=""></td>
   `;
-  // fill exceptions cell
   const excTd = tr.querySelector('.exc-cell');
   excTd.dataset.exc = exceptionsAttr || '';
   excTd.innerHTML = renderExceptionsFromAttr(exceptionsAttr || '');
@@ -497,13 +510,18 @@ function renderBOM(bom) {
 
     const price = carObj['Total price'];
     const emis  = carObj['Total emitions'];
+    const mass  = carObj['Total mass (kg)'];
     const priceTxt = (price != null && String(price).trim() !== '') ? `${price}€` : 'Value Not Calculated or Null';
     const emisTxt  = (emis  != null && String(emis).trim()  !== '') ? `${parseDecimal(emis).toFixed(8)} kgCO2e` : 'Value Not Calculated or Null';
+    const massTxt  = (mass  != null && String(mass).trim()  !== '') ? fmtMass(mass) : 'Value Not Calculated or Null';
 
     const carStart = tbody.children.length;
     tbody.appendChild(
       rowSectionHTML(
-        rowHeaderWithToggle(`<b>Car:</b> ${carName}`, `Total: ${priceTxt} | Emissions: ${emisTxt}`),
+        rowHeaderWithToggle(
+          `<b>Car:</b> ${carName}`,
+          `Total: ${priceTxt} | Emissions: ${emisTxt} | Mass: ${massTxt}`
+        ),
         'car'
       )
     );
@@ -532,8 +550,10 @@ function renderSystemsBlock(tbody, carObj) {
     const sysStart = tbody.children.length;
     tbody.appendChild(
       rowSectionHTML(
-        rowHeaderWithToggle(`<span class="mono">${sysCode}</span>`,
-                            `Cost: ${ s.c.toFixed(2) } | Emiss: ${ fmtE(s.e) }`),
+        rowHeaderWithToggle(
+          `<span class="mono">${sysCode}</span>`,
+          `Cost: ${ s.c.toFixed(2) } | Emiss: ${ fmtE(s.e) } | Mass: ${ fmtMass(s.m) }`
+        ),
         'section'
       )
     );
@@ -549,7 +569,9 @@ function renderSystemsBlock(tbody, carObj) {
         rowSectionHTML(
           rowHeaderWithToggle(
             `<b>${asmName}</b> ${asmObj.assembly_no ? `<span class="mono">#${asmObj.assembly_no}</span>` : ''}`,
-            `Cost: ${ (parseDecimal(asmObj.assembly_costs) ?? at.c).toFixed(2) } | Emiss: ${ fmtE(parseDecimal(asmObj.assembly_emissions) ?? at.e) }`
+            `Cost: ${(parseDecimal(asmObj.assembly_costs) ?? at.c).toFixed(2)} | ` +
+            `Emiss: ${ fmtE(parseDecimal(asmObj.assembly_emissions) ?? at.e) } | ` +
+            `Mass:  ${ fmtMass(parseDecimal(asmObj.assembly_mass_kg) ?? at.m) }`
           ),
           'assembly'
         )
@@ -572,7 +594,9 @@ function renderSystemsBlock(tbody, carObj) {
           rowSectionHTML(
             rowHeaderWithToggle(
               `<b>${asmName}</b> ⇒ ${subName}`,
-              `Cost: ${ (parseDecimal(subObj.sub_assembly_costs) ?? st.c).toFixed(2) } | Emiss: ${ fmtE(parseDecimal(subObj.sub_assembly_emissions) ?? st.e) }`
+              `Cost: ${(parseDecimal(subObj.sub_assembly_costs) ?? st.c).toFixed(2)} | ` +
+              `Emiss: ${ fmtE(parseDecimal(subObj.sub_assembly_emissions) ?? st.e) } | ` +
+              `Mass:  ${ fmtMass(parseDecimal(subObj.sub_assembly_mass_kg) ?? st.m) }`
             ),
             'subasm'
           )
@@ -824,7 +848,6 @@ function applySearch(){
     for (let j = startIndex; j <= endIndex; j++){
       tbody.children[j].classList.toggle('hidden', !match);
     }
-    // keep caret consistent with state if we re-show a matched block
     if (match) {
       const collapsed = getPartCollapsed({startIndex});
       const caret = prow.querySelector('.toggle-part');
